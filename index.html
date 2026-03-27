@@ -702,20 +702,20 @@
     <!-- Step 1: Password -->
     <div id="stepPassword">
       <div class="modal-label">Contraseña de acceso</div>
-      <input class="modal-input" type="password" id="passwordInput" placeholder="••••••" onkeydown="if(event.key==='Enter') checkPassword()" />
+      <input class="modal-input" type="password" id="passwordInput" placeholder="••••••" />
       <div class="modal-hint" id="passwordError" style="color:#c0392b;display:none;margin-bottom:12px">Contraseña incorrecta.</div>
-      <button class="modal-btn" onclick="checkPassword()">Continuar</button>
+      <button class="modal-btn" id="passwordBtn">Continuar</button>
     </div>
 
     <!-- Step 2: API Key -->
     <div id="stepApiKey" style="display:none">
       <div class="modal-label">API Key de OpenAI</div>
-      <input class="modal-input" type="password" id="apiKeyInput" placeholder="sk-proj-..." onkeydown="if(event.key==='Enter') saveApiKey()" />
+      <input class="modal-input" type="password" id="apiKeyInput" placeholder="sk-proj-..." />
       <div class="modal-hint">
         Tu clave se guarda solo en este navegador y nunca se envía a ningún servidor externo.<br><br>
         Obtené tu key en <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a>
       </div>
-      <button class="modal-btn" onclick="saveApiKey()">Ingresar al Studio</button>
+      <button class="modal-btn" id="apiKeyBtn">Ingresar al Studio</button>
     </div>
   </div>
 </div>
@@ -1582,6 +1582,12 @@ const MODE_META = {
 
 // ── INIT ──
 window.onload = () => {
+  // Modal buttons
+  document.getElementById('passwordBtn').addEventListener('click', checkPassword);
+  document.getElementById('passwordInput').addEventListener('keydown', e => { if(e.key==='Enter') checkPassword(); });
+  document.getElementById('apiKeyBtn').addEventListener('click', saveApiKey);
+  document.getElementById('apiKeyInput').addEventListener('keydown', e => { if(e.key==='Enter') saveApiKey(); });
+
   const authed = sessionStorage.getItem('genki_auth');
   if (!authed) {
     // Show password step
