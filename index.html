@@ -698,25 +698,13 @@
   <div class="modal" id="loginModal">
     <div class="modal-logo">Genki Content Studio</div>
     <div class="modal-sub">@espacio_genki · acceso interno</div>
-
-    <!-- Step 1: Password -->
-    <div id="stepPassword">
-      <div class="modal-label">Contraseña de acceso</div>
-      <input class="modal-input" type="password" id="passwordInput" placeholder="••••••" />
-      <div class="modal-hint" id="passwordError" style="color:#c0392b;display:none;margin-bottom:12px">Contraseña incorrecta.</div>
-      <button class="modal-btn" id="passwordBtn">Continuar</button>
+    <div class="modal-label">API Key de OpenAI</div>
+    <input class="modal-input" type="password" id="apiKeyInput" placeholder="sk-proj-..." />
+    <div class="modal-hint">
+      Tu clave se guarda solo en este navegador y nunca se envía a ningún servidor externo.<br><br>
+      Obtené tu key en <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a>
     </div>
-
-    <!-- Step 2: API Key -->
-    <div id="stepApiKey" style="display:none">
-      <div class="modal-label">API Key de OpenAI</div>
-      <input class="modal-input" type="password" id="apiKeyInput" placeholder="sk-proj-..." />
-      <div class="modal-hint">
-        Tu clave se guarda solo en este navegador y nunca se envía a ningún servidor externo.<br><br>
-        Obtené tu key en <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a>
-      </div>
-      <button class="modal-btn" id="apiKeyBtn">Ingresar al Studio</button>
-    </div>
+    <button class="modal-btn" id="apiKeyBtn">Ingresar al Studio</button>
   </div>
 </div>
 
@@ -871,29 +859,7 @@ function getApiKey() {
   return '';
 }
 
-// ── PASSWORD ──
-const APP_PASSWORD = '1492GL';
 
-function checkPassword() {
-  const val = document.getElementById('passwordInput').value;
-  if (val === APP_PASSWORD) {
-    sessionStorage.setItem('genki_auth', '1');
-    document.getElementById('stepPassword').style.display = 'none';
-    document.getElementById('stepApiKey').style.display = 'block';
-    document.getElementById('passwordError').style.display = 'none';
-    // Si ya tiene API key guardada, entrar directo
-    if (getApiKey()) {
-      apiKey = getApiKey();
-      document.getElementById('apiModal').style.display = 'none';
-    } else {
-      document.getElementById('apiKeyInput').focus();
-    }
-  } else {
-    document.getElementById('passwordError').style.display = 'block';
-    document.getElementById('passwordInput').value = '';
-    document.getElementById('passwordInput').focus();
-  }
-}
 
 
 let apiKey = getApiKey();
@@ -1582,24 +1548,12 @@ const MODE_META = {
 
 // ── INIT ──
 window.onload = () => {
-  // Modal buttons
-  document.getElementById('passwordBtn').addEventListener('click', checkPassword);
-  document.getElementById('passwordInput').addEventListener('keydown', e => { if(e.key==='Enter') checkPassword(); });
   document.getElementById('apiKeyBtn').addEventListener('click', saveApiKey);
   document.getElementById('apiKeyInput').addEventListener('keydown', e => { if(e.key==='Enter') saveApiKey(); });
 
-  const authed = sessionStorage.getItem('genki_auth');
-  if (!authed) {
-    // Show password step
-    document.getElementById('stepPassword').style.display = 'block';
-    document.getElementById('stepApiKey').style.display = 'none';
+  if (!apiKey) {
     document.getElementById('apiModal').style.display = 'flex';
-    document.getElementById('passwordInput').focus();
-  } else if (!apiKey) {
-    // Password ok but no API key
-    document.getElementById('stepPassword').style.display = 'none';
-    document.getElementById('stepApiKey').style.display = 'block';
-    document.getElementById('apiModal').style.display = 'flex';
+    document.getElementById('apiKeyInput').focus();
   }
   renderHistory();
   document.getElementById('userInput').addEventListener('input', () => {
