@@ -582,17 +582,7 @@
     text-align: center;
   }
 
-  /* ── API KEY MODAL ── */
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(26,26,24,0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 999;
-    backdrop-filter: blur(4px);
-  }
+  /* ── API KEY MODAL REMOVED ── */
 
   .modal {
     background: var(--cream);
@@ -693,20 +683,7 @@
 </head>
 <body>
 
-<!-- API KEY MODAL -->
-<div class="modal-overlay" id="apiModal">
-  <div class="modal" id="loginModal">
-    <div class="modal-logo">Genki Content Studio</div>
-    <div class="modal-sub">@espacio_genki · acceso interno</div>
-    <div class="modal-label">API Key de OpenAI</div>
-    <input class="modal-input" type="password" id="apiKeyInput" placeholder="sk-proj-..." />
-    <div class="modal-hint">
-      Tu clave se guarda solo en este navegador y nunca se envía a ningún servidor externo.<br><br>
-      Obtené tu key en <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a>
-    </div>
-    <button class="modal-btn" id="apiKeyBtn">Ingresar al Studio</button>
-  </div>
-</div>
+
 
 <!-- HEADER -->
 <header>
@@ -717,11 +694,27 @@
       <div class="logo-sub">@espacio_genki · herramienta interna</div>
     </div>
   </div>
-  <div class="api-status">
-    <div class="dot"></div>
-    GPT-4o conectado
+  <div style="display:flex;align-items:center;gap:16px">
+    <div class="api-status" id="apiStatus">
+      <div class="dot"></div>
+      <span id="apiStatusText">Conectado</span>
+    </div>
+    <button onclick="toggleConfig()" style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;color:var(--muted);background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;cursor:pointer;" onmouseover="this.style.borderColor='var(--terracotta)'" onmouseout="this.style.borderColor='var(--border)'">⚙ API KEY</button>
   </div>
 </header>
+
+<!-- CONFIG PANEL -->
+<div id="configPanel" style="display:none;background:white;border-bottom:1px solid var(--border);padding:16px 40px;">
+  <div style="display:flex;align-items:center;gap:16px;max-width:600px">
+    <div style="flex:1">
+      <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.12em;color:var(--muted);margin-bottom:6px">API KEY DE OPENAI</div>
+      <input id="apiKeyInput" type="password" placeholder="sk-proj-..." style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-family:'DM Mono',monospace;font-size:12px;outline:none;background:var(--cream)" onfocus="this.style.borderColor='var(--terracotta)'" onblur="this.style.borderColor='var(--border)'" />
+    </div>
+    <button onclick="saveApiKey()" style="padding:9px 20px;background:var(--black);color:var(--cream);border:none;border-radius:8px;font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;white-space:nowrap;margin-top:20px" onmouseover="this.style.background='var(--terracotta)'" onmouseout="this.style.background='var(--black)'">Guardar</button>
+    <button onclick="toggleConfig()" style="padding:9px 16px;background:none;color:var(--muted);border:1px solid var(--border);border-radius:8px;font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;margin-top:20px">Cerrar</button>
+  </div>
+  <div id="configMsg" style="display:none;font-size:12px;color:var(--sage);margin-top:8px;font-family:'DM Mono',monospace">✓ API key guardada correctamente</div>
+</div>
 
 <!-- MAIN -->
 <div class="container">
@@ -838,29 +831,29 @@
 // ── API KEY HELPERS ──
 function setApiKey(key) {
   apiKey = key;
-  localStorage.setItem('genki_openai_key', key);
-  // Cookie con 1 año de vida como fallback
+  try {
+    localStorage.setItem(CFG_KEY, JSON.stringify({ apiKey: key }));
+  } catch(e) {}
+  // Cookie fallback - 1 año
   const expires = new Date();
   expires.setFullYear(expires.getFullYear() + 1);
-  document.cookie = `genki_openai_key=${encodeURIComponent(key)};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
-}
-
-function getApiKey() {
-  // Primero cookie (más persistente)
-  const match = document.cookie.match(/genki_openai_key=([^;]+)/);
-  if (match) {
-    const key = decodeURIComponent(match[1]);
-    localStorage.setItem('genki_openai_key', key);
-    return key;
-  }
-  // Fallback localStorage
-  return localStorage.getItem('genki_openai_key') || '';
+  document.cookie = `genki_studio_key=${encodeURIComponent(key)};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
 }
 
 
 
 
-let apiKey = getApiKey();
+// ── API KEY ──
+const CFG_KEY = 'genki_studio_cfg';
+
+function loadSavedKey() {
+  try {
+    const cfg = JSON.parse(localStorage.getItem(CFG_KEY)) || {};
+    return cfg.apiKey || '';
+  } catch { return ''; }
+}
+
+let apiKey = loadSavedKey();
 let currentModel = localStorage.getItem('genki_model') || 'gpt-4.1';
 let currentMode = null;
 let currentConvId = null;
@@ -1549,10 +1542,7 @@ window.onload = () => {
   document.getElementById('apiKeyBtn').addEventListener('click', saveApiKey);
   document.getElementById('apiKeyInput').addEventListener('keydown', e => { if(e.key==='Enter') saveApiKey(); });
 
-  if (!apiKey) {
-    document.getElementById('apiModal').style.display = 'flex';
-    document.getElementById('apiKeyInput').focus();
-  }
+
   renderHistory();
   document.getElementById('userInput').addEventListener('input', () => {
     const hasText = document.getElementById('userInput').value.trim().length > 0;
@@ -1566,13 +1556,41 @@ function updateModel(val) {
 }
 
 function saveApiKey() {
-  const key = document.getElementById('apiKeyInput').value.trim();
+  const input = document.getElementById('apiKeyInput');
+  const key = input.value.trim();
   if (!key.startsWith('sk-')) {
     alert('La API key debe empezar con "sk-"');
     return;
   }
   setApiKey(key);
-  document.getElementById('apiModal').style.display = 'none';
+  apiKey = key;
+  // Show saved message
+  const msg = document.getElementById('configMsg');
+  msg.style.display = 'block';
+  setTimeout(() => { msg.style.display = 'none'; toggleConfig(); }, 1500);
+  updateApiStatus();
+}
+
+function toggleConfig() {
+  const panel = document.getElementById('configPanel');
+  const isHidden = panel.style.display === 'none';
+  panel.style.display = isHidden ? 'block' : 'none';
+  if (isHidden) {
+    document.getElementById('apiKeyInput').value = apiKey ? '••••••••••••••••' : '';
+    document.getElementById('apiKeyInput').focus();
+  }
+}
+
+function updateApiStatus() {
+  const dot = document.querySelector('.dot');
+  const txt = document.getElementById('apiStatusText');
+  if (apiKey) {
+    dot.style.background = 'var(--sage)';
+    txt.textContent = 'Conectado';
+  } else {
+    dot.style.background = '#e74c3c';
+    txt.textContent = 'Sin API key';
+  }
 }
 
 // ── MODE SELECTION ──
@@ -1616,6 +1634,7 @@ async function sendMessage() {
   const input = document.getElementById('userInput');
   const text = input.value.trim();
   if (!text || !currentMode || isLoading) return;
+  if (!apiKey) { toggleConfig(); return; }
 
   addMessage('user', text);
   conversationHistory.push({ role: 'user', content: text });
