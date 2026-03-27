@@ -105,6 +105,10 @@
     flex-direction: column;
     gap: 8px;
     overflow-y: auto;
+    position: sticky;
+    top: 77px;
+    height: calc(100vh - 77px);
+    align-self: flex-start;
   }
 
   .sidebar-label {
@@ -532,6 +536,43 @@
 
   .send-btn svg { width: 16px; height: 16px; }
 
+  .input-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
+
+  .model-selector {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .model-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+
+  .model-selector select {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--black);
+    background: var(--cream-dark);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 8px;
+    cursor: pointer;
+    outline: none;
+    letter-spacing: 0.04em;
+  }
+
+  .model-selector select:hover {
+    border-color: var(--terracotta);
+  }
+
   .input-hint {
     font-family: 'DM Mono', monospace;
     font-size: 10px;
@@ -775,7 +816,17 @@
           </svg>
         </button>
       </div>
-      <div class="input-hint">Enter para enviar · Shift+Enter para nueva línea</div>
+      <div class="input-controls">
+        <div class="model-selector">
+          <span class="model-label">Modelo:</span>
+          <select id="modelSelect" onchange="updateModel(this.value)">
+            <option value="gpt-4.1">GPT-4.1 — Máxima calidad</option>
+            <option value="gpt-4.1-mini">GPT-4.1 Mini — Rápido</option>
+            <option value="gpt-4.1-nano">GPT-4.1 Nano — Muy rápido</option>
+          </select>
+        </div>
+        <div class="input-hint">Enter para enviar · Shift+Enter para nueva línea</div>
+      </div>
     </div>
   </div>
 </div>
@@ -783,6 +834,7 @@
 <script>
 // ── STATE ──
 let apiKey = localStorage.getItem('genki_openai_key') || '';
+let currentModel = localStorage.getItem('genki_model') || 'gpt-4.1';
 let currentMode = null;
 let currentConvId = null;
 let conversationHistory = [];
@@ -800,6 +852,10 @@ function saveHistory() {
   // Keep last 20
   localStorage.setItem('genki_histories', JSON.stringify(all.slice(0, 20)));
   renderHistory();
+  const savedModel = localStorage.getItem('genki_model') || 'gpt-4.1';
+  currentModel = savedModel;
+  const sel = document.getElementById('modelSelect');
+  if (sel) sel.value = savedModel;
 }
 
 function renderHistory() {
@@ -879,37 +935,56 @@ Lo que siempre hacés: explicar el mecanismo de acción, integrar la visión TCM
 
 Paul Stamets (micología), David Winston (fitoterapia adaptógena), Henri Leclerc, Rudolf Weiss, investigación actual en fitoquímica. Los mencionás cuando aportan, no para exhibir.
 
-## ESTRUCTURA OBLIGATORIA — 9 DIAPOSITIVAS
+## ESTRUCTURA DEL CARRUSEL — 9 DIAPOSITIVAS FLEXIBLES
 
-**DIAPO 1: TÍTULO GANCHO**
+El carrusel tiene siempre 9 diapositivas, pero la estructura interna varía según el tema, el ángulo y la emoción que querés generar. No existe una secuencia fija — existe un repertorio de bloques que combinás según lo que el contenido necesite.
+
+**BLOQUES DISPONIBLES — elegís los más adecuados para cada post:**
+
+**TÍTULO GANCHO** (siempre va primero)
 Genera curiosidad sin caer en clickbait de suplementos.
 Ejemplos que SÍ: "Lo que tu hígado intenta decirte cuando te agotás sin razón aparente." / "La planta que la medicina china usó por 2000 años para esto."
 Ejemplos que NO: "¡El superalimento que cambiará tu vida!" / "5 plantas para la ansiedad"
 Subtítulo: precisa el ángulo sin revelar todo.
 
-**DIAPO 2: EL PROBLEMA DESDE ADENTRO**
-Describís qué está pasando en el cuerpo o en la energía. No desde el síntoma superficial — desde el mecanismo profundo. TCM o fisiología según el tema. El lector piensa: "así que eso es lo que me pasa."
+**EL PROBLEMA DESDE ADENTRO**
+Qué está pasando en el cuerpo o en la energía. No desde el síntoma superficial — desde el mecanismo profundo. TCM o fisiología según el tema. El lector piensa: "así que eso es lo que me pasa."
 
-**DIAPO 3: LA MIRADA DE LA MEDICINA ORIENTAL**
-Cómo ve la TCM este desequilibrio. Órgano afectado, emoción asociada, patrón energético. Esto produce el momento "ahá" — una forma completamente distinta de entender el cuerpo.
+**LA MIRADA DE LA MEDICINA ORIENTAL**
+Cómo ve la TCM este desequilibrio. Órgano afectado, emoción asociada, patrón energético. Momento "ahá" — una forma completamente distinta de entender el cuerpo.
 
-**DIAPO 4: LA PLANTA O EL HONGO**
-Presentás la planta o hongo protagonista. Nombre científico + nombre común. Origen, historia de uso. Por qué esta y no otra.
+**LA PLANTA O EL HONGO**
+Nombre científico + nombre común. Origen, historia de uso. Por qué esta y no otra.
 
-**DIAPO 5: EL MECANISMO DE ACCIÓN**
-Cómo actúa a nivel bioquímico o energético. Principios activos clave, adaptógenos, betaglucanos, alcaloides — lo que corresponda. Accesible pero preciso. Aquí citás autor o investigación si suma.
+**EL MECANISMO DE ACCIÓN**
+Cómo actúa a nivel bioquímico o energético. Principios activos clave, adaptógenos, betaglucanos, alcaloides. Accesible pero preciso. Citás autor o investigación si suma.
 
-**DIAPO 6: CÓMO USARLA**
+**CÓMO USARLA**
 Formas de preparación, dosis orientativas, timing, combinaciones. Concreto y aplicable. Advertencias si corresponde.
 
-**DIAPO 7: LO QUE NO SE DICE**
+**LO QUE NO SE DICE**
 Algo contraintuitivo, una precaución real, una combinación que pocos conocen, un error frecuente. Muestra profundidad y genera confianza.
 
-**DIAPO 8: EL PUENTE**
+**COMPARACIÓN / CONTEXTO**
+Comparás con otro enfoque, otra planta, otra tradición. Aporta perspectiva y profundidad.
+
+**HISTORIA / ORIGEN**
+La historia detrás de la planta o el hongo. Cultura, tradición, cómo llegó a la medicina moderna.
+
+**EL DATO CIENTÍFICO**
+Un estudio, un investigador, un hallazgo reciente. Ancla el contenido en evidencia sin perder la voz terapéutica.
+
+**EL ERROR COMÚN**
+Lo que la mayoría hace mal con esta planta o este protocolo. Posicionás desde la autoridad.
+
+**EL PUENTE** (siempre va en la anteúltima)
 Conectás con el Diplomado en Fitoterapia, el Curso de Hongos Adaptógenos u otro según el tema. Invitación genuina, no venta forzada.
 
-**DIAPO 9: CTA**
+**CTA** (siempre va último)
 Simple y directo. "Escribime HONGOS / FITOTERAPIA y te cuento todo sobre el curso."
+
+**CRITERIO PARA ELEGIR LA ESTRUCTURA:**
+Antes de escribir, preguntate: ¿Qué necesita este tema para impactar? ¿Es un tema de mecanismo (priorizás bioquímica + TCM)? ¿Es un tema de uso práctico (priorizás preparación + errores + dosis)? ¿Es un tema de historia (priorizás origen + dato científico + mecanismo)? La estructura surge del tema, no al revés. Dos posts sobre plantas diferentes deben sentirse distintos."
 
 ## CALIDAD NO NEGOCIABLE
 
@@ -970,37 +1045,56 @@ Lo que siempre hacés: nombrar el patrón con precisión, anclar en el cuerpo, d
 
 Fritz Perls, Virginia Satir, Bessel van der Kolk, Gabor Maté, Peter Levine, Bruce Lipton. Los mencionás cuando aportan, no para exhibir.
 
-## ESTRUCTURA OBLIGATORIA — 9 DIAPOSITIVAS
+## ESTRUCTURA DEL CARRUSEL — 9 DIAPOSITIVAS FLEXIBLES
 
-**DIAPO 1: TÍTULO GANCHO**
+El carrusel tiene siempre 9 diapositivas, pero la estructura interna varía según el tema, el ángulo emocional y lo que el contenido necesita para resonar. No existe una secuencia fija — existe un repertorio de bloques que combinás según el post.
+
+**BLOQUES DISPONIBLES — elegís los más adecuados para cada post:**
+
+**TÍTULO GANCHO** (siempre va primero)
 Genera curiosidad sin revelar todo. No usa fórmulas genéricas.
 Ejemplos que SÍ: "Si tuviera que elegir una sola habilidad para sanar de verdad, sería esta."
 Ejemplos que NO: "¡Aprendé a poner límites hoy!" / "5 razones por las que no podés decir no"
 Subtítulo: complementa el título, no lo repite.
 
-**DIAPO 2: IDENTIFICACIÓN**
-El lector se reconoce. Hablás desde tu propia experiencia o desde lo que acompañás. Describís el patrón sin nombrarlo todavía. El lector piensa: "esto me pasa a mí."
+**IDENTIFICACIÓN**
+El lector se reconoce. Describís el patrón sin nombrarlo todavía desde tu propia experiencia o desde lo que acompañás. El lector piensa: "esto me pasa a mí."
 
-**DIAPO 3: EL PATRÓN**
-Nombrás el patrón con precisión desde la Gestalt u otro marco teórico. Le das nombre y origen. El lector entiende por qué le pasa, no solo que le pasa. Esto produce el momento "ahá".
+**EL PATRÓN**
+Nombrás el patrón con precisión desde la Gestalt u otro marco teórico. Le das nombre y origen. El lector entiende por qué le pasa, no solo que le pasa.
 
-**DIAPO 4: EL CUERPO**
-El cuerpo como registro. ¿Qué siente el cuerpo cuando este patrón opera? Sensaciones concretas. Anclar en lo físico es parte de la voz Genki.
+**EL CUERPO**
+Qué siente el cuerpo cuando este patrón opera. Sensaciones concretas. Anclar en lo físico es parte de la voz Genki.
 
-**DIAPO 5: LA HERRAMIENTA**
+**LA HERRAMIENTA**
 Una práctica concreta con nombre propio y pasos reales (mínimo 3 pasos específicos). No "prestá atención a lo que sentís." Sí: "Esto es lo que empecé a hacer y funciona."
 
-**DIAPO 6: EL OBSTÁCULO**
+**EL OBSTÁCULO**
 La culpa, la duda, la resistencia. Lo que aparece cuando intentás hacer algo distinto. Normalizás sin minimizar. Reencuadrás desde la Gestalt.
 
-**DIAPO 7: EL CAMBIO REAL**
+**EL CAMBIO REAL**
 Qué cambia cuando lo practicás. Concreto, no utópico. No "serás feliz para siempre." Sí: "Los vínculos se vuelven más reales. Aparece coherencia."
 
-**DIAPO 8: EL PUENTE**
+**LA HISTORIA PERSONAL**
+Una situación real (tuya o de alguien que acompañaste, siempre anónimo). Narra sin moralizar. El lector siente que no está solo.
+
+**EL CONCEPTO**
+Un término de la psicología o la Gestalt explicado desde adentro. No como clase magistral — como revelación. "Esto tiene nombre. Se llama..."
+
+**LA PREGUNTA**
+Una pregunta que el lector no se había hecho. Abre algo. No cierra, no da respuesta — invita a mirar diferente.
+
+**EL REENCUADRE**
+Una creencia común que das vuelta. Lo que parecía un defecto era una protección. Lo que parecía debilidad era sensibilidad.
+
+**EL PUENTE** (siempre va en la anteúltima)
 Conectás naturalmente con el diplomado o curso correspondiente. Sin sonar a venta forzada. Suena a invitación genuina.
 
-**DIAPO 9: CTA**
+**CTA** (siempre va último)
 Simple, directo. "Escribime ACOMPAÑAR y te cuento todo sobre el Diplomado."
+
+**CRITERIO PARA ELEGIR LA ESTRUCTURA:**
+Antes de escribir, preguntate: ¿Qué necesita este tema para tocar? ¿Es un tema de patrón inconsciente (priorizás identificación + patrón + cuerpo)? ¿Es un tema de herramienta práctica (priorizás herramienta + obstáculo + cambio real)? ¿Es un tema de reencuadre conceptual (priorizás concepto + pregunta + reencuadre)? ¿Es un tema emocional profundo (priorizás historia + cuerpo + cambio real)? La estructura surge del tema y la emoción que querés generar. Dos posts sobre vínculos deben sentirse distintos."
 
 ## CALIDAD NO NEGOCIABLE
 
@@ -1412,6 +1506,11 @@ window.onload = () => {
   });
 };
 
+function updateModel(val) {
+  currentModel = val;
+  localStorage.setItem('genki_model', val);
+}
+
 function saveApiKey() {
   const key = document.getElementById('apiKeyInput').value.trim();
   if (!key.startsWith('sk-')) {
@@ -1483,7 +1582,7 @@ async function sendMessage() {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: currentModel,
         messages: [
           { role: 'system', content: SYSTEM_PROMPTS[currentMode] },
           ...conversationHistory
