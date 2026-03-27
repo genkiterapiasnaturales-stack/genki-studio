@@ -695,16 +695,28 @@
 
 <!-- API KEY MODAL -->
 <div class="modal-overlay" id="apiModal">
-  <div class="modal">
+  <div class="modal" id="loginModal">
     <div class="modal-logo">Genki Content Studio</div>
     <div class="modal-sub">@espacio_genki · acceso interno</div>
-    <div class="modal-label">API Key de OpenAI</div>
-    <input class="modal-input" type="password" id="apiKeyInput" placeholder="sk-proj-..." />
-    <div class="modal-hint">
-      Tu clave se guarda solo en este navegador y nunca se envía a ningún servidor externo.<br><br>
-      Obtené tu key en <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a>
+
+    <!-- Step 1: Password -->
+    <div id="stepPassword">
+      <div class="modal-label">Contraseña de acceso</div>
+      <input class="modal-input" type="password" id="passwordInput" placeholder="••••••" onkeydown="if(event.key==='Enter') checkPassword()" />
+      <div class="modal-hint" id="passwordError" style="color:#c0392b;display:none;margin-bottom:12px">Contraseña incorrecta.</div>
+      <button class="modal-btn" onclick="checkPassword()">Continuar</button>
     </div>
-    <button class="modal-btn" onclick="saveApiKey()">Ingresar al Studio</button>
+
+    <!-- Step 2: API Key -->
+    <div id="stepApiKey" style="display:none">
+      <div class="modal-label">API Key de OpenAI</div>
+      <input class="modal-input" type="password" id="apiKeyInput" placeholder="sk-proj-..." onkeydown="if(event.key==='Enter') saveApiKey()" />
+      <div class="modal-hint">
+        Tu clave se guarda solo en este navegador y nunca se envía a ningún servidor externo.<br><br>
+        Obtené tu key en <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a>
+      </div>
+      <button class="modal-btn" onclick="saveApiKey()">Ingresar al Studio</button>
+    </div>
   </div>
 </div>
 
@@ -763,7 +775,10 @@
     </button>
 
     <div class="sidebar-divider"></div>
-    <div class="sidebar-label">Historial</div>
+    <div class="sidebar-label" style="display:flex;align-items:center;justify-content:space-between;padding-right:4px">
+      Historial
+      <button onclick="clearAllHistory()" title="Borrar todo el historial" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--muted);padding:0;line-height:1" onmouseover="this.style.color='#c0392b'" onmouseout="this.style.color='var(--muted)'">✕ borrar</button>
+    </div>
     <div id="historyList"><div class="no-history">Sin conversaciones aún</div></div>
 
     <div class="sidebar-divider"></div>
@@ -832,8 +847,32 @@
 </div>
 
 <script>
-// ── STATE ──
-let apiKey = localStorage.getItem('genki_openai_key') || '';
+// ── API KEY HELPERS ──
+function setApiKey(key) {
+  apiKey = key;
+  localStorage.setItem('genki_openai_key', key);
+  // Cookie con 1 año de vida como fallback
+  const expires = new Date();
+  expires.setFullYear(expires.getFullYear() + 1);
+  document.cookie = `genki_openai_key=${encodeURIComponent(key)};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
+}
+
+function getApiKey() {
+  // Primero localStorage
+  let key = localStorage.getItem('genki_openai_key');
+  if (key) return key;
+  // Fallback a cookie
+  const match = document.cookie.match(/genki_openai_key=([^;]+)/);
+  if (match) {
+    key = decodeURIComponent(match[1]);
+    localStorage.setItem('genki_openai_key', key); // restaura localStorage
+    return key;
+  }
+  return '';
+}
+
+
+let apiKey = getApiKey();
 let currentModel = localStorage.getItem('genki_model') || 'gpt-4.1';
 let currentMode = null;
 let currentConvId = null;
@@ -858,6 +897,26 @@ function saveHistory() {
   if (sel) sel.value = savedModel;
 }
 
+function clearAllHistory() {
+  if (!confirm('¿Borrar todo el historial?')) return;
+  localStorage.removeItem('genki_histories');
+  currentConvId = null;
+  conversationHistory = [];
+  renderHistory();
+}
+
+function deleteHistoryItem(id, e) {
+  e.stopPropagation();
+  const all = JSON.parse(localStorage.getItem('genki_histories') || '[]');
+  const filtered = all.filter(h => h.id !== id);
+  localStorage.setItem('genki_histories', JSON.stringify(filtered));
+  if (currentConvId === id) {
+    currentConvId = null;
+    conversationHistory = [];
+  }
+  renderHistory();
+}
+
 function renderHistory() {
   const all = JSON.parse(localStorage.getItem('genki_histories') || '[]');
   const container = document.getElementById('historyList');
@@ -867,10 +926,13 @@ function renderHistory() {
   }
   const icons = { gaston: '🌿', laura: '🌸', ideas: '💡', titulos: '🎯' };
   container.innerHTML = all.map(h => `
-    <button class="history-item ${h.id === currentConvId ? 'active' : ''}" onclick="loadHistory('${h.id}')">
-      <span class="history-icon">${icons[h.mode] || '💬'}</span>
-      <span class="history-title">${h.title}</span>
-    </button>`).join('');
+    <div style="display:flex;align-items:center;gap:4px;position:relative">
+      <button class="history-item ${h.id === currentConvId ? 'active' : ''}" onclick="loadHistory('${h.id}')" style="flex:1;min-width:0">
+        <span class="history-icon">${icons[h.mode] || '💬'}</span>
+        <span class="history-title">${h.title}</span>
+      </button>
+      <button onclick="deleteHistoryItem('${h.id}', event)" title="Borrar" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--muted);padding:4px;flex-shrink:0;opacity:0.6" onmouseover="this.style.color='#c0392b';this.style.opacity='1'" onmouseout="this.style.color='var(--muted)';this.style.opacity='0.6'">✕</button>
+    </div>`).join('');
 }
 
 function loadHistory(id) {
@@ -1496,7 +1558,17 @@ const MODE_META = {
 
 // ── INIT ──
 window.onload = () => {
-  if (!apiKey) {
+  const authed = sessionStorage.getItem('genki_auth');
+  if (!authed) {
+    // Show password step
+    document.getElementById('stepPassword').style.display = 'block';
+    document.getElementById('stepApiKey').style.display = 'none';
+    document.getElementById('apiModal').style.display = 'flex';
+    document.getElementById('passwordInput').focus();
+  } else if (!apiKey) {
+    // Password ok but no API key
+    document.getElementById('stepPassword').style.display = 'none';
+    document.getElementById('stepApiKey').style.display = 'block';
     document.getElementById('apiModal').style.display = 'flex';
   }
   renderHistory();
@@ -1517,8 +1589,7 @@ function saveApiKey() {
     alert('La API key debe empezar con "sk-"');
     return;
   }
-  apiKey = key;
-  localStorage.setItem('genki_openai_key', key);
+  setApiKey(key);
   document.getElementById('apiModal').style.display = 'none';
 }
 
