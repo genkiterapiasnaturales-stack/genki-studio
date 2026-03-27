@@ -846,17 +846,15 @@ function setApiKey(key) {
 }
 
 function getApiKey() {
-  // Primero localStorage
-  let key = localStorage.getItem('genki_openai_key');
-  if (key) return key;
-  // Fallback a cookie
+  // Primero cookie (más persistente)
   const match = document.cookie.match(/genki_openai_key=([^;]+)/);
   if (match) {
-    key = decodeURIComponent(match[1]);
-    localStorage.setItem('genki_openai_key', key); // restaura localStorage
+    const key = decodeURIComponent(match[1]);
+    localStorage.setItem('genki_openai_key', key);
     return key;
   }
-  return '';
+  // Fallback localStorage
+  return localStorage.getItem('genki_openai_key') || '';
 }
 
 
