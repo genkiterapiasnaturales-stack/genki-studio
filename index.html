@@ -871,6 +871,30 @@ function getApiKey() {
   return '';
 }
 
+// ── PASSWORD ──
+const APP_PASSWORD = '1492GL';
+
+function checkPassword() {
+  const val = document.getElementById('passwordInput').value;
+  if (val === APP_PASSWORD) {
+    sessionStorage.setItem('genki_auth', '1');
+    document.getElementById('stepPassword').style.display = 'none';
+    document.getElementById('stepApiKey').style.display = 'block';
+    document.getElementById('passwordError').style.display = 'none';
+    // Si ya tiene API key guardada, entrar directo
+    if (getApiKey()) {
+      apiKey = getApiKey();
+      document.getElementById('apiModal').style.display = 'none';
+    } else {
+      document.getElementById('apiKeyInput').focus();
+    }
+  } else {
+    document.getElementById('passwordError').style.display = 'block';
+    document.getElementById('passwordInput').value = '';
+    document.getElementById('passwordInput').focus();
+  }
+}
+
 
 let apiKey = getApiKey();
 let currentModel = localStorage.getItem('genki_model') || 'gpt-4.1';
